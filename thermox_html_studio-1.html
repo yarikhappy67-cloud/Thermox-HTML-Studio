@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thermox HTML Studio</title>
+<style>
+:root{--bg:#090a0c;--panel:#111316;--panel2:#17191d;--line:#25282e;--text:#f3f4f6;--muted:#8b9099;--accent:#f4f4f5;--green:#7ee787}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+.app{min-height:100vh;display:flex;flex-direction:column}
+header{height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;background:#090a0cf2;backdrop-filter:blur(12px);z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-weight:750;letter-spacing:.3px}
+.logo{width:29px;height:29px;border-radius:9px;background:#f3f4f6;color:#090a0c;display:grid;place-items:center;font-weight:900}
+.brand small{display:block;color:var(--muted);font-size:10px;font-weight:500;letter-spacing:1.4px}
+.header-actions{display:flex;gap:8px}
+button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:9px 12px;font:inherit;cursor:pointer;transition:.15s}
+button:hover{background:#23262b}
+button.primary{background:#f3f4f6;color:#101114;border-color:#f3f4f6;font-weight:700}
+button:active{transform:scale(.97)}
+main{width:min(1200px,100%);margin:0 auto;padding:18px 14px 24px;flex:1}
+.intro{margin:6px 0 18px}
+.intro h1{font-size:22px;margin:0 0 5px;letter-spacing:-.6px}
+.intro p{margin:0;color:var(--muted);font-size:13px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.toolbar button{font-size:13px}
+.status{margin-left:auto;align-self:center;color:var(--muted);font-size:12px}
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:62vh}
+.pane{border:1px solid var(--line);background:var(--panel);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-height:450px}
+.pane-head{height:44px;padding:0 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-size:12px;font-weight:700;letter-spacing:.5px}
+.pane-head span:last-child{color:var(--muted);font-weight:500}
+textarea{flex:1;width:100%;resize:none;border:0;outline:0;background:#0d0f12;color:#d9e0e8;padding:15px;font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto}
+.preview-wrap{flex:1;background:#fff;min-height:300px}
+iframe{border:0;width:100%;height:100%;min-height:400px;background:white}
+.mobile-tabs{display:none}
+.note{font-size:11px;color:var(--muted);margin-top:10px}
+input[type=file]{display:none}
+@media(max-width:760px){
+ header{padding:0 12px}main{padding:15px 10px}
+ .workspace{grid-template-columns:1fr;min-height:0}
+ .pane{min-height:55vh}
+ .pane.preview-pane{display:none}
+ .workspace.show-preview .pane.editor-pane{display:none}
+ .workspace.show-preview .pane.preview-pane{display:flex}
+ .mobile-tabs{display:flex;gap:7px;margin-bottom:10px}
+ .mobile-tabs button{flex:1}
+ .mobile-tabs button.active{background:#f3f4f6;color:#101114}
+ .status{width:100%;margin-left:0}
+ .intro h1{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand"><div class="logo">T</div><div>THERMOX<small>HTML STUDIO</small></div></div>
+  <div class="header-actions"><button id="saveTop" class="primary">↓ Сохранить</button></div>
+</header>
+<main>
+  <div class="intro"><h1>HTML Studio</h1><p>Создавай, запускай и сохраняй HTML прямо на устройстве.</p></div>
+  <div class="mobile-tabs"><button id="tabCode" class="active">Код</button><button id="tabPreview">Предпросмотр</button></div>
+  <div class="toolbar">
+    <button id="openBtn">＋ Загрузить файл</button>
+    <button id="runBtn" class="primary">▶ Запустить</button>
+    <button id="exampleBtn">✦ Пример</button>
+    <button id="clearBtn">Очистить</button>
+    <span class="status" id="status">Готово</span>
+  </div>
+  <input id="fileInput" type="file" accept=".html,.htm,text/html">
+  <div class="workspace" id="workspace">
+    <section class="pane editor-pane">
+      <div class="pane-head"><span>HTML EDITOR</span><span id="fileName">untitled.html</span></div>
+      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Вставь сюда HTML-код..."></textarea>
+    </section>
+    <section class="pane preview-pane">
+      <div class="pane-head"><span>PREVIEW</span><span>LIVE VIEW</span></div>
+      <div class="preview-wrap"><iframe id="preview" sandbox="allow-scripts allow-forms allow-modals"></iframe></div>
+    </section>
+  </div>
+  <div class="note">Предпросмотр изолирован. Для сохранения нажми «Сохранить» — файл .html будет скачан на устройство.</div>
+</main>
+</div>
+<script>
+const code=document.getElementById('code'), preview=document.getElementById('preview'), statusEl=document.getElementById('status'), workspace=document.getElementById('workspace'), fileNameEl=document.getElementById('fileName');
+const sample=`<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мой сайт</title>
+<style>
+body{font-family:Arial,sans-serif;background:#101114;color:white;text-align:center;padding:40px}
+.card{max-width:400px;margin:auto;padding:28px;border-radius:20px;background:#202228}
+button{background:#fff;color:#111;border:0;padding:12px 20px;border-radius:10px;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Привет!</h1>
+<p>Это мой первый HTML-проект.</p>
+<button onclick="alert('Работает!')">Нажми меня</button>
+</div>
+</body>
+</html>`;
+function run(){preview.srcdoc=code.value;statusEl.textContent='Предпросмотр обновлён';}
+document.getElementById('runBtn').onclick=run;
+document.getElementById('openBtn').onclick=()=>document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;code.value=await f.text();fileNameEl.textContent=f.name;statusEl.textContent='Файл загружен';run();e.target.value='';};
+function save(){const blob=new Blob([code.value],{type:'text/html;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(fileNameEl.textContent.endsWith('.html')?fileNameEl.textContent:'project.html');a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);statusEl.textContent='Файл сохранён';}
+document.getElementById('saveTop').onclick=save;
+document.getElementById('exampleBtn').onclick=()=>{code.value=sample;fileNameEl.textContent='example.html';run();};
+document.getElementById('clearBtn').onclick=()=>{if(confirm('Удалить весь код из редактора?')){code.value='';fileNameEl.textContent='untitled.html';preview.srcdoc='';statusEl.textContent='Редактор очищен';}};
+code.addEventListener('input',()=>statusEl.textContent='Есть несохранённые изменения');
+document.getElementById('tabCode').onclick=()=>{workspace.classList.remove('show-preview');document.getElementById('tabCode').classList.add('active');document.getElementById('tabPreview').classList.remove('active')};
+document.getElementById('tabPreview').onclick=()=>{run();workspace.classList.add('show-preview');document.getElementById('tabPreview').classList.add('active');document.getElementById('tabCode').classList.remove('active')};
+code.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const s=code.selectionStart,end=code.selectionEnd;code.value=code.value.substring(0,s)+'  '+code.value.substring(end);code.selectionStart=code.selectionEnd=s+2;}});
+</script>
+</body>
+</html>
